@@ -1,12 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  AlertCircle,
   Check,
   Copy,
+  FileArchive,
+  FileText,
+  Film,
+  Image as ImageIcon,
   Link2,
+  Music,
   Share2,
   UploadCloud,
   X,
-  AlertCircle,
 } from 'lucide-react';
 import type { FileVisibility, Folder, UploadedFile, UploadQueueItem } from '../types/file.ts';
 import { uploadFileWithProgress } from '../services/fileService.ts';
@@ -18,6 +23,7 @@ interface UploadDropzoneProps {
   getIdToken: () => Promise<string>;
   onUploadComplete: (file: UploadedFile) => void;
   onOpenShare: (file: UploadedFile) => void;
+  onNotify?: (message: string) => void;
   compact?: boolean;
   externalFiles?: File[] | null;
   onExternalFilesConsumed?: () => void;
@@ -29,6 +35,7 @@ export function UploadDropzone({
   getIdToken,
   onUploadComplete,
   onOpenShare,
+  onNotify,
   compact = false,
   externalFiles,
   onExternalFilesConsumed,
@@ -109,6 +116,7 @@ export function UploadDropzone({
             )
           );
           onUploadComplete(uploaded);
+          onNotify?.(`Uploaded "${uploaded.fileName}" — URL ready`);
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Upload failed.';
           setQueue((prev) =>
@@ -119,10 +127,9 @@ export function UploadDropzone({
         }
       }
     },
-    [folderId, getIdToken, onUploadComplete, visibility]
+    [folderId, getIdToken, onNotify, onUploadComplete, visibility]
   );
 
-  // Consume files dropped onto the global window drop overlay
   useEffect(() => {
     if (externalFiles && externalFiles.length > 0) {
       void startUploads(externalFiles);
@@ -130,7 +137,6 @@ export function UploadDropzone({
     }
   }, [externalFiles, onExternalFilesConsumed, startUploads]);
 
-  // Support pasting images/files from clipboard
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -162,13 +168,14 @@ export function UploadDropzone({
     }
   };
 
-  const handleCopy = async (id: string, url: string) => {
+  const handleCopy = async (id: string, url: string, label: string) => {
     try {
       await navigator.clipboard.writeText(url);
       setCopiedId(id);
+      onNotify?.(`${label} copied to clipboard`);
       setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 2000);
     } catch {
-      // Fallback ignored
+      // ignore clipboard errors
     }
   };
 
@@ -189,11 +196,11 @@ export function UploadDropzone({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`relative rounded-xl border transition-colors ${
+        className={`relative rounded-xl border transition-all duration-150 bg-studio-grid overflow-hidden ${
           isDragging
-            ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/30'
-            : 'border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/70 hover:border-slate-400 dark:hover:border-slate-600'
-        } ${compact ? 'p-5' : 'p-8'}`}
+            ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
+            : 'border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-400/70 dark:hover:border-blue-500/50'
+        } ${compact ? 'p-5 sm:p-6' : 'p-7 sm:p-9'}`}
       >
         <input
           ref={inputRef}
@@ -209,52 +216,74 @@ export function UploadDropzone({
           }}
         />
 
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400">
-              <UploadCloud className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <UploadCloud className="w-6 h-6" />
             </div>
-            <div className="space-y-1">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                Drop any file to generate instant URLs
+            <div className="space-y-1.5">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                Drop files here to generate instant URLs
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Images, videos, audio, PDFs, archives, code, or binaries up to 250 MB. Paste screenshots with Ctrl+V.
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                Upload any format up to 250 MB or press Ctrl+V to paste screenshots. Every file gets a share page, direct URL, embed code, and QR code.
               </p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                <span className="inline-flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  Images
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Film className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                  Streaming Video
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Music className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  Audio
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  PDF & Docs
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <FileArchive className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  ZIP & Any Binary
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <div className="flex items-center gap-2">
-              <label htmlFor="upload-visibility" className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 h-10">
+              <label htmlFor="upload-visibility" className="text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
                 Access
               </label>
               <select
                 id="upload-visibility"
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as FileVisibility)}
-                className="h-9 px-2.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="text-xs font-semibold bg-transparent text-slate-900 dark:text-slate-100 focus:outline-none cursor-pointer"
               >
-                <option value="unlisted">Anyone with link</option>
-                <option value="public">Public</option>
-                <option value="private">Private (only me)</option>
+                <option value="unlisted" className="bg-white dark:bg-slate-900">Anyone with link</option>
+                <option value="public" className="bg-white dark:bg-slate-900">Public</option>
+                <option value="private" className="bg-white dark:bg-slate-900">Private</option>
               </select>
             </div>
 
             {folders.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label htmlFor="upload-folder" className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 h-10">
+                <label htmlFor="upload-folder" className="text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
                   Folder
                 </label>
                 <select
                   id="upload-folder"
                   value={folderId}
                   onChange={(e) => setFolderId(e.target.value)}
-                  className="h-9 px-2.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 max-w-[150px] truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="text-xs font-semibold bg-transparent text-slate-900 dark:text-slate-100 max-w-[130px] truncate focus:outline-none cursor-pointer"
                 >
-                  <option value="">All Files (Root)</option>
+                  <option value="" className="bg-white dark:bg-slate-900">Root</option>
                   {folders.map((f) => (
-                    <option key={f.folderId} value={f.folderId}>
+                    <option key={f.folderId} value={f.folderId} className="bg-white dark:bg-slate-900">
                       {f.name}
                     </option>
                   ))}
@@ -265,9 +294,9 @@ export function UploadDropzone({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="h-9 px-4 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 cursor-pointer"
+              className="h-10 px-5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 cursor-pointer"
             >
-              Choose Files
+              Select Files
             </button>
           </div>
         </div>
@@ -275,9 +304,9 @@ export function UploadDropzone({
 
       {queue.length > 0 && (
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 tabular-nums">
-              Recent transfers · {queue.length} {queue.length === 1 ? 'file' : 'files'}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+              Transfers · {queue.length} {queue.length === 1 ? 'file' : 'files'}
             </span>
             {queue.some((q) => q.status === 'done' || q.status === 'error') && (
               <button
@@ -301,7 +330,7 @@ export function UploadDropzone({
                       <span className="font-medium text-slate-900 dark:text-slate-100 truncate">
                         {item.file.name}
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums shrink-0">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums shrink-0">
                         {formatBytes(item.file.size)}
                       </span>
                     </div>
@@ -336,7 +365,7 @@ export function UploadDropzone({
                       <>
                         <button
                           type="button"
-                          onClick={() => handleCopy(`${item.id}_share`, shareUrl)}
+                          onClick={() => handleCopy(`${item.id}_share`, shareUrl, 'Share URL')}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
                         >
                           {copiedId === `${item.id}_share` ? (
@@ -353,7 +382,7 @@ export function UploadDropzone({
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleCopy(`${item.id}_raw`, directUrl)}
+                          onClick={() => handleCopy(`${item.id}_raw`, directUrl, 'Direct URL')}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
                         >
                           {copiedId === `${item.id}_raw` ? (
@@ -374,7 +403,7 @@ export function UploadDropzone({
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white transition-colors whitespace-nowrap cursor-pointer"
                         >
                           <Share2 className="w-3.5 h-3.5" />
-                          Share Options
+                          Share
                         </button>
                       </>
                     )}

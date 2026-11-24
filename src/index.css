@@ -26,3 +26,33 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+.bg-studio-grid {
+  background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.dark .bg-studio-grid {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+}
+
+@keyframes toast-settle {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast {
+  animation: toast-settle 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-toast {
+    animation: none;
+  }
+}

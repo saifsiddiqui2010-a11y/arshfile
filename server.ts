@@ -1,11 +1,11 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import multer from 'multer';
 import crypto from 'crypto';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { initializeApp, getApps, getApp } from 'firebase-admin/app';
-import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
+import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 import firebaseConfig from './firebase-applet-config.json' with { type: 'json' };
 
 // ---------------------------------------------------------------------------
@@ -22,12 +22,25 @@ const adminAuth = getAuth(adminApp);
 // Storage Directories & File Registry
 // ---------------------------------------------------------------------------
 const ROOT_DIR = process.cwd();
-const UPLOAD_DIR = path.resolve(ROOT_DIR, 'uploads');
-const DATA_DIR = path.resolve(ROOT_DIR, 'data');
-const INDEX_FILE = path.resolve(DATA_DIR, 'file-index.json');
 
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-fs.mkdirSync(DATA_DIR, { recursive: true });
+function initStorageDirs(): { uploadDir: string; dataDir: string } {
+  const candidates = [ROOT_DIR, path.join(os.tmpdir(), 'droplink')];
+  for (const base of candidates) {
+    const uploadDir = path.resolve(base, 'uploads');
+    const dataDir = path.resolve(base, 'data');
+    try {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      fs.mkdirSync(dataDir, { recursive: true });
+      return { uploadDir, dataDir };
+    } catch {
+      // Try next writable location
+    }
+  }
+  throw new Error('Unable to initialize writable storage directories.');
+}
+
+const { uploadDir: UPLOAD_DIR, dataDir: DATA_DIR } = initStorageDirs();
+const INDEX_FILE = path.resolve(DATA_DIR, 'file-index.json');
 
 const MAX_FILE_SIZE_BYTES = 250 * 1024 * 1024; // 250 MB
 const TICKET_SECRET = process.env.TICKET_SECRET || crypto.randomBytes(32).toString('hex');
@@ -650,6 +663,7 @@ async function startServer() {
   // Vite Dev Middleware or Production Static Assets
   // -------------------------------------------------------------------------
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
