@@ -1,0 +1,219 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user account record storing private profile information.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Authentication user UID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254,
+          "description": "Verified user email address (PII, owner-only)."
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "User display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "User avatar URL."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was last updated."
+        }
+      },
+      "required": ["uid", "email", "displayName", "photoURL", "createdAt", "updatedAt"]
+    },
+    "Folder": {
+      "title": "Folder",
+      "description": "User-created folder for organizing uploaded files.",
+      "type": "object",
+      "properties": {
+        "folderId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique folder document ID."
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Human-readable folder name."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the folder was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the folder was last updated."
+        }
+      },
+      "required": ["folderId", "ownerId", "name", "createdAt", "updatedAt"]
+    },
+    "UploadedFile": {
+      "title": "UploadedFile",
+      "description": "Metadata and share configuration for an uploaded file of any type.",
+      "type": "object",
+      "properties": {
+        "shareId": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique share identifier matching the document ID."
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "ownerDisplayName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Non-PII display name shown on shared file pages."
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "Editable display filename."
+        },
+        "originalName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "Immutable original filename at upload time."
+        },
+        "mimeType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "MIME type detected for the uploaded file."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["image", "video", "audio", "document", "archive", "other"],
+          "description": "High-level file category."
+        },
+        "extension": {
+          "type": "string",
+          "maxLength": 24,
+          "description": "Normalized file extension without leading dot."
+        },
+        "sizeBytes": {
+          "type": "number",
+          "description": "File size in bytes."
+        },
+        "sha256": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 checksum of the stored binary."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "unlisted", "private"],
+          "description": "Access level controlling whether direct/share URLs are accessible."
+        },
+        "folderId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Folder ID or empty string for root workspace."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional user description or note attached to the file."
+        },
+        "directPath": {
+          "type": "string",
+          "maxLength": 256,
+          "pattern": "^/api/raw/[a-zA-Z0-9_\\-]+$",
+          "description": "Relative path for direct media/file serving."
+        },
+        "downloadPath": {
+          "type": "string",
+          "maxLength": 256,
+          "pattern": "^/api/download/[a-zA-Z0-9_\\-]+$",
+          "description": "Relative path for forced attachment download."
+        },
+        "sharePath": {
+          "type": "string",
+          "maxLength": 256,
+          "pattern": "^/s/[a-zA-Z0-9_\\-]+$",
+          "description": "Relative path for the shareable viewer page."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when uploaded."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when metadata was last modified."
+        }
+      },
+      "required": [
+        "shareId",
+        "ownerId",
+        "ownerDisplayName",
+        "fileName",
+        "originalName",
+        "mimeType",
+        "category",
+        "extension",
+        "sizeBytes",
+        "sha256",
+        "visibility",
+        "folderId",
+        "description",
+        "directPath",
+        "downloadPath",
+        "sharePath",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-only user profile documents containing PII."
+    },
+    "/folders/{folderId}": {
+      "schema": { "$ref": "#/entities/Folder" },
+      "description": "Owner-only folders for organizing uploaded files."
+    },
+    "/files/{shareId}": {
+      "schema": { "$ref": "#/entities/UploadedFile" },
+      "description": "Uploaded file metadata records; owner has full CRUD and public/unlisted items allow single-document get by exact shareId."
+    }
+  }
+}

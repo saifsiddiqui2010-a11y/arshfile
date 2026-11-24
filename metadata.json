@@ -1,0 +1,6 @@
+{
+  "name": "DropLink",
+  "description": "Upload images, videos, documents, and any file type to generate instant direct URLs and shareable links.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
